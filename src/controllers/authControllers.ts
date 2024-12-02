@@ -50,18 +50,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-
 // Fungsi Register
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const { name, email, password } = req.body;
+  const { name, email, password, universityName, facultyName, majorName } = req.body;
 
   try {
-    if (!name || !email || !password) {
+    // Validasi input
+    if (!name || !email || !password || !universityName || !facultyName || !majorName) {
       res.status(400).json({
         status: 400, 
         message: 'All fields are required',
         data: []
-    });
+      });
       return;
     }
 
@@ -71,9 +71,33 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({
         status: 400, 
         message: 'Email already in use',
-        data: [] 
-    });
+        data: []
+      });
       return;
+    }
+
+    // Cek apakah universitas sudah ada
+    let university = await pool.query('SELECT * FROM universities WHERE name = $1', [universityName]);
+    if (university.rows.length === 0) {
+      // Jika universitas belum ada, masukkan ke tabel universities
+      const newUniversity = await pool.query('INSERT INTO universities (name) VALUES ($1) RETURNING id', [universityName]);
+      university = newUniversity;
+    }
+
+    // Cek apakah fakultas sudah ada
+    let faculty = await pool.query('SELECT * FROM faculties WHERE name = $1 AND university_id = $2', [facultyName, university.rows[0].id]);
+    if (faculty.rows.length === 0) {
+      // Jika fakultas belum ada, masukkan ke tabel faculties
+      const newFaculty = await pool.query('INSERT INTO faculties (name, university_id) VALUES ($1, $2) RETURNING id', [facultyName, university.rows[0].id]);
+      faculty = newFaculty;
+    }
+
+    // Cek apakah jurusan sudah ada
+    let major = await pool.query('SELECT * FROM majors WHERE name = $1 AND faculty_id = $2', [majorName, faculty.rows[0].id]);
+    if (major.rows.length === 0) {
+      // Jika jurusan belum ada, masukkan ke tabel majors
+      const newMajor = await pool.query('INSERT INTO majors (name, faculty_id) VALUES ($1, $2) RETURNING id', [majorName, faculty.rows[0].id]);
+      major = newMajor;
     }
 
     // Hash password
@@ -81,38 +105,53 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Simpan pengguna ke database
     const newUser = await pool.query(
-      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *',
-      [name, email, hashedPassword]
+      'INSERT INTO users (name, email, password, university_id, faculty_id, major_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [name, email, hashedPassword, university.rows[0].id, faculty.rows[0].id, major.rows[0].id]
     );
 
     res.status(201).json({ 
-        status: '201',
-        message: 'User registered successfully',
-        data: newUser.rows[0], });
+      status: 201,
+      message: 'User registered successfully',
+      data: newUser.rows[0],
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({
+      status: 500, 
+      message: 'Internal server error',
+      data: []
+    });
   }
 };
 
 // Fungsi Get All Users
 export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const users = await pool.query('SELECT id, name, email, password FROM users');
+    const users = await pool.query(`
+      SELECT 
+        u.id, 
+        u.name, 
+        u.email, 
+        un.name AS university_name, 
+        f.name AS faculty_name, 
+        m.name AS major_name
+      FROM users u
+      LEFT JOIN universities un ON u.university_id = un.id
+      LEFT JOIN faculties f ON u.faculty_id = f.id
+      LEFT JOIN majors m ON u.major_id = m.id
+    `);
     
-    // Format response sesuai dengan kebutuhan
     res.status(200).json({
-      status: 'success', // status API
-      message: 'Users retrieved successfully', // pesan umum
-      data: users.rows, // data hasil query
+      status: 200, 
+      message: 'Users retrieved successfully', 
+      data: users.rows, 
     });
   } catch (error) {
     console.error(error);
-    // Error response dengan status dan pesan yang sesuai
     res.status(500).json({
-      status: 500, // status error
-      message: 'Internal server error', // pesan error
-      data: [], // data kosong karena error
+      status: 500,
+      message: 'Internal server error',
+      data: [],
     });
   }
 };
@@ -120,7 +159,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
 // Fungsi Delete User
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-
+  
   try {
     const user = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
     if (user.rows.length === 0) {
@@ -216,3 +255,4 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     });
   }
 };
+
