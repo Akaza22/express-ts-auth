@@ -13,11 +13,18 @@ import {
     getAllUniversities 
 
 } from '../controllers/univControllers';
-import { getAllFaculties } from '../controllers/facultyControllers'
+import { 
+    createFaculty, 
+    deleteFaculty, 
+    editFaculty, 
+    getAllFaculties, 
+    getFacultiesByUniversity
+} from '../controllers/facultyControllers'
 import { authMiddleware } from '../middlewares/authMiddlewares';
 
 const router = express.Router();
 
+//auth
 router.post('/register', register); // Handler tanpa error
 router.post('/login', login);
 router.get('/users', authMiddleware, getAllUsers); // Middleware dan handler kompatibel
@@ -32,5 +39,10 @@ router.put('/universities/:id', authMiddleware, editUniversity)
 
 //fakultas
 router.get('/faculties', authMiddleware, getAllFaculties);
+router.post('/faculties', authMiddleware, createFaculty);
+router.delete('/faculties', authMiddleware, deleteFaculty);
+router.get('/faculties/:university_name', authMiddleware, getFacultiesByUniversity);
+router.put('/faculties/:faculty_id', authMiddleware, editFaculty);
+
 
 export default router;
