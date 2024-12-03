@@ -25,6 +25,10 @@ import { createMajor, deleteMajor, getMajorsByUniversityAndFaculty, updateMajor 
 
 const router = express.Router();
 
+router.get('/test', (req, res) => {
+  res.status(200).json({ message: 'API is working' });
+});
+
 //auth
 router.post('/register', register); // Handler tanpa error
 router.post('/login', login);
