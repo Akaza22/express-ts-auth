@@ -93,6 +93,7 @@ export const getMajorsByUniversityAndFaculty = async (
   }
 };
 
+// delete data jurusan
 export const deleteMajor = async (req: Request, res: Response): Promise<void> => {
   try {
     const { univName, facultyName, majorName } = req.params;
@@ -143,6 +144,49 @@ export const deleteMajor = async (req: Request, res: Response): Promise<void> =>
       status: 500,
       message: 'Internal server error',
     });
+  }
+};
+
+// update data jurusan
+export const updateMajor = async (req: Request, res: Response): Promise<void> => {
+  const { univName, facultyName, majorName } = req.params;
+  const { majorName: newMajorName } = req.body;
+
+  try {
+    // Contoh implementasi
+    const university = await pool.query('SELECT * FROM universities WHERE name = $1', [univName]);
+    if (university.rowCount === 0) {
+      res.status(404).json({ status: 404, message: 'University not found' });
+      return;
+    }
+
+    const faculty = await pool.query('SELECT * FROM faculties WHERE name = $1 AND university_id = $2', [
+      facultyName,
+      university.rows[0].id,
+    ]);
+    if (faculty.rowCount === 0) {
+      res.status(404).json({ status: 404, message: 'Faculty not found' });
+      return;
+    }
+
+    const major = await pool.query('SELECT * FROM majors WHERE name = $1 AND faculty_id = $2', [
+      majorName,
+      faculty.rows[0].id,
+    ]);
+    if (major.rowCount === 0) {
+      res.status(404).json({ status: 404, message: 'Major not found' });
+      return;
+    }
+
+    const updatedMajor = await pool.query(
+      'UPDATE majors SET name = $1 WHERE id = $2 RETURNING *',
+      [newMajorName || major.rows[0].name, major.rows[0].id],
+    );
+
+    res.status(200).json({ status: 200, message: 'Major updated successfully', data: updatedMajor.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: 500, message: 'Internal server error' });
   }
 };
 
