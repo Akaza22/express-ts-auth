@@ -21,6 +21,7 @@ import {
     getFacultiesByUniversity
 } from '../controllers/facultyControllers'
 import { authMiddleware } from '../middlewares/authMiddlewares';
+import { createMajor, deleteMajor, getMajorsByUniversityAndFaculty } from '../controllers/majorControllers';
 
 const router = express.Router();
 
@@ -43,6 +44,11 @@ router.post('/faculties', authMiddleware, createFaculty);
 router.delete('/faculties', authMiddleware, deleteFaculty);
 router.get('/faculties/:university_name', authMiddleware, getFacultiesByUniversity);
 router.put('/faculties/:faculty_id', authMiddleware, editFaculty);
+
+//Jurusan
+router.post('/majors', authMiddleware, createMajor)
+router.get('/majors/:universityName/:facultyName', authMiddleware, getMajorsByUniversityAndFaculty);
+router.delete('/majors/:univName/:facultyName/:majorName', deleteMajor);
 
 
 export default router;
