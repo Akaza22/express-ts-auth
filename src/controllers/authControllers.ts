@@ -256,3 +256,13 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
   }
 };
 
+// Logout Controller
+export const logoutUser = (req: Request, res: Response): void => {
+  try {
+    res.status(200).json({message: "Log out Success"})
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+

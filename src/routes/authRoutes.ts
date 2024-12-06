@@ -5,6 +5,7 @@ import {
     getAllUsers, 
     deleteUser, 
     changePassword,
+    logoutUser,
 } from '../controllers/authControllers'
 import { 
     createUniversity, 
@@ -35,6 +36,8 @@ router.post('/login', login);
 router.get('/users', authMiddleware, getAllUsers); // Middleware dan handler kompatibel
 router.delete('/users/:id', authMiddleware, deleteUser);
 router.put('/change-password', changePassword);
+
+router.post('/logout', authMiddleware, logoutUser);
 
 //univ
 router.get('/universities', authMiddleware, getAllUniversities);
