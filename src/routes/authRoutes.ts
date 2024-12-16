@@ -27,7 +27,7 @@ import { createMajor, deleteMajor, getMajorsByUniversityAndFaculty, updateMajor 
 const router = express.Router();
 
 router.get('/test', (req, res) => {
-  res.status(200).json({ message: 'API is working' });
+  res.status(200).json({ message: 'API JALAN WOY' });
 });
 
 //auth
